@@ -9,6 +9,7 @@ const path = require('path');
 const crypto = require('crypto');
 
 const URI = process.env.mongoURI;
+
 console.log(URI);
 
 const options = {
@@ -26,6 +27,7 @@ con.once('open', () => {
     gfs = Grid(con.db, mongoose.mongo);
     gfs.collection('uploads');
 });
+console.log("GFS: ", gfs);
 
 // create storage engine
 const storage = new GridFsStorage({
@@ -66,5 +68,22 @@ router.get('/files', (req, res) => {
       return res.json(files);
     });
 });
+
+router.get('/:filename', (req, res) => {
+	gfs.files.findOne({filename: req.params.filename}, (err, file) => {
+		if (err) throw err;
+		let readStream = gfs.createReadStream({filename: file.filename});
+		/*
+		let data = '';
+		readStream.on('data', (chunk) => {
+			data += chunk.toString('base64');
+		})
+		readStream.on("error", function (err) {
+			res.send("Image not found");
+		});
+		*/
+		readStream.pipe(res);
+	})
+})
 
 module.exports = router;
